@@ -17,6 +17,9 @@ on:
           - "false"
           - "true"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Python ${{ matrix.python-version }}
@@ -38,7 +41,9 @@ jobs:
           allow-prereleases: true
 
       - name: Install package and dev dependencies
-        run: pip install -e .[dev]
+        run: |
+          pip install --upgrade pip setuptools
+          pip install -e .[dev]
 
       - name: Run type checker (mypy)
         run: python -m mypy src
