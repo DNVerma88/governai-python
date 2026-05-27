@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable, cast
 
 from governai.wsgi.config import GovernAIConfig
 from governai.wsgi.resolvers import _wsgi_environ
@@ -67,7 +67,7 @@ class GovernAIMiddleware:
         (or empty string if unresolved).
     """
 
-    def __init__(self, wsgi_app: Callable, config: GovernAIConfig) -> None:
+    def __init__(self, wsgi_app: Callable[..., Any], config: GovernAIConfig) -> None:
         """Initialise the middleware.
 
         Args:
@@ -82,7 +82,7 @@ class GovernAIMiddleware:
     def __call__(
         self,
         environ: dict[str, object],
-        start_response: Callable,
+        start_response: Callable[..., Any],
     ) -> Iterable[bytes]:
         """Handle a single WSGI request.
 
@@ -120,7 +120,7 @@ class GovernAIMiddleware:
         # ------------------------------------------------------------------
         # 3. Set ContextVar so that resolvers can access the environ
         # ------------------------------------------------------------------
-        token = _wsgi_environ.set(environ)  # type: ignore[arg-type]
+        token = _wsgi_environ.set(environ)
 
         # ------------------------------------------------------------------
         # 4. Resolve tenant and user (best-effort; never fail the request)
@@ -130,7 +130,7 @@ class GovernAIMiddleware:
         try:
             import asyncio  # noqa: PLC0415 — lazily imported to keep startup light
 
-            def _run_coro(coro):  # type: ignore[no-untyped-def]
+            def _run_coro(coro: Any) -> Any:
                 """Run a coroutine safely regardless of whether an event loop is running."""
                 try:
                     loop = asyncio.get_running_loop()
@@ -178,20 +178,20 @@ class GovernAIMiddleware:
             status: str,
             response_headers: list[tuple[str, str]],
             exc_info: object = None,
-        ) -> Callable:
+        ) -> Callable[..., Any]:
             # Inject correlation ID header only when not already present
             header_names = {name.lower() for name, _ in response_headers}
             if "x-correlation-id" not in header_names:
                 response_headers.append(("X-Correlation-Id", correlation_id))
             if exc_info is not None:
-                return start_response(status, response_headers, exc_info)
-            return start_response(status, response_headers)
+                return cast(Callable[..., Any], start_response(status, response_headers, exc_info))
+            return cast(Callable[..., Any], start_response(status, response_headers))
 
         # ------------------------------------------------------------------
         # 6. Call wrapped application
         # ------------------------------------------------------------------
         try:
-            return self._app(environ, _start_response_wrapper)
+            return cast(Iterable[bytes], self._app(environ, _start_response_wrapper))
         finally:
             _wsgi_environ.reset(token)
 
@@ -210,12 +210,12 @@ class GovernAIWSGIApp:
         app = GovernAIWSGIApp(wsgi_app=my_wsgi_app, config=config)
     """
 
-    def __init__(self, wsgi_app: Callable, config: GovernAIConfig) -> None:
+    def __init__(self, wsgi_app: Callable[..., Any], config: GovernAIConfig) -> None:
         self._middleware = GovernAIMiddleware(wsgi_app=wsgi_app, config=config)
 
     def __call__(
         self,
         environ: dict[str, object],
-        start_response: Callable,
+        start_response: Callable[..., Any],
     ) -> Iterable[bytes]:
         return self._middleware(environ, start_response)
