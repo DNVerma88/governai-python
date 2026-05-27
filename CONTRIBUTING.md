@@ -9,7 +9,7 @@ Thank you for your interest in contributing to the GovernAI Python SDK.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-org/governai-python.git
+git clone https://github.com/DNVerma88/governai-python.git
 cd governai-python
 ```
 

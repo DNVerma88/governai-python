@@ -18,7 +18,7 @@ GovernAI has **no external package dependencies**. It uses the Python standard l
 ### From source (recommended during development)
 
 ```bash
-git clone https://github.com/your-org/governai-python.git
+git clone https://github.com/DNVerma88/governai-python.git
 cd governai-python
 python -m venv .venv
 .venv\Scripts\activate        # Windows
